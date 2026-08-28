@@ -2,12 +2,13 @@
   "name": "Hora-Atividade",
   "short_name": "Hora-Atividade",
   "display": "standalone",
-  "start_url": ".",
+  "start_url": "./",
+  "scope": "./",
   "background_color": "#f4f6f8",
   "theme_color": "#1f5f46",
   "icons": [
     {
-      "src": "https://raw.githubusercontent.com/kleberbifon-beep/hora-atividade/main/App%20Hora%20Atividade.png",
+      "src": "./app-hora-atividade.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any maskable"
