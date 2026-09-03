@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Instalar Hora-Atividade</title>
+  <meta name="theme-color" content="#1f5f46">
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:Arial,Helvetica,sans-serif;
+      background:#f4f6f8;
+      color:#263238;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+    .box{
+      width:100%;
+      max-width:620px;
+      background:#fff;
+      border:1px solid #e3e8eb;
+      border-radius:22px;
+      padding:30px;
+      box-shadow:0 12px 35px rgba(0,0,0,.08);
+    }
+    h1{margin:0 0 8px;color:#1f5f46;font-size:28px}
+    p{line-height:1.55;color:#607d8b}
+    .passos{
+      margin:24px 0;
+      padding:0;
+      list-style:none;
+      display:grid;
+      gap:12px;
+    }
+    .passos li{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      padding:14px;
+      background:#f8faf9;
+      border-radius:14px;
+    }
+    .n{
+      width:30px;height:30px;flex:0 0 30px;
+      border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      background:#e8f3ee;color:#1f5f46;font-weight:bold;
+    }
+    button,a.botao{
+      width:100%;
+      min-height:52px;
+      border:0;border-radius:12px;
+      font-size:16px;font-weight:700;
+      cursor:pointer;
+      text-decoration:none;
+      display:flex;align-items:center;justify-content:center;
+      padding:12px 16px;
+    }
+    .principal{background:#1f5f46;color:#fff}
+    .secundario{background:#eceff1;color:#455a64;margin-top:10px}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    #status{
+      margin-top:20px;
+      padding:15px;
+      border-radius:12px;
+      background:#f5f7f8;
+      display:none;
+      white-space:pre-line;
+      line-height:1.5;
+    }
+    #resultado{
+      display:none;
+      margin-top:20px;
+      border-top:1px solid #e3e8eb;
+      padding-top:20px;
+    }
+    .ok{color:#1f5f46;font-weight:bold}
+    .erro{color:#c62828}
+    code{
+      display:block;
+      word-break:break-all;
+      background:#f5f7f8;
+      padding:10px;
+      border-radius:8px;
+      margin:8px 0 14px;
+      font-size:12px;
+    }
+  </style>
+</head>
+<body>
+  <main class="box">
+    <h1>Instalar Hora-Atividade</h1>
+    <p>
+      Escolha a conta Google que será proprietária do sistema.
+      A instalação criará uma nova planilha-base no Drive dessa conta,
+      anexará o aplicativo e publicará o Web App.
+    </p>
+
+    <ul class="passos">
+      <li><span class="n">1</span><span>Entrar com a conta Google administradora.</span></li>
+      <li><span class="n">2</span><span>Autorizar criação da planilha e do Apps Script.</span></li>
+      <li><span class="n">3</span><span>Aguardar a criação e publicação automática.</span></li>
+      <li><span class="n">4</span><span>Entrar no app com <strong>admin / 123456</strong> e concluir o primeiro acesso.</span></li>
+    </ul>
+
+    <button id="btnInstalar" class="principal">Continuar com Google</button>
+
+    <div id="status"></div>
+
+    <div id="resultado">
+      <div class="ok">Instalação criada com sucesso.</div>
+
+      <p>Planilha-base criada:</p>
+      <a id="linkPlanilha" class="botao secundario" target="_blank" rel="noopener">
+        Abrir planilha-base
+      </a>
+
+      <p>Aplicativo:</p>
+      <a id="linkApp" class="botao principal" target="_blank" rel="noopener">
+        Abrir Hora-Atividade
+      </a>
+
+      <p style="font-size:13px">
+        Guarde o link do aplicativo. Ele poderá ser compartilhado com
+        diretores e professores depois dos respectivos cadastros.
+      </p>
+    </div>
+  </main>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    /*
+      CONFIGURAÇÃO DO INSTALADOR
+      ----------------------------------------------------------
+      CLIENT_ID:
+      Crie um OAuth Client ID do tipo "Aplicativo da Web"
+      no Google Cloud e coloque abaixo.
+
+      TEMPLATE_SPREADSHEET_ID:
+      Planilha-modelo limpa que contém as abas, UNIDADES,
+      CONFIG e abas _MODELO_ ocultas. Ela precisa estar
+      compartilhada como leitura com quem instalará.
+    */
+    const CLIENT_ID = "1086594484351-fde6t21t2k3rorbbhvai83icjcsrb1rl.apps.googleusercontent.com";
+
+    const TEMPLATE_SPREADSHEET_ID =
+      "1hYwbqDUwOI3SQtUTdJ0ksjk0Qcwqt4ISd8a8ibH2N6Q";
+
+    const PROJECT_TEMPLATE_URL =
+      "./projeto-hora-atividade.json";
+
+    const APP_WRAPPER_BASE =
+      "https://kleberbifon-beep.github.io/hora-atividade/";
+
+    const SCOPES = [
+      "https://www.googleapis.com/auth/drive",
+      "https://www.googleapis.com/auth/spreadsheets",
+      "https://www.googleapis.com/auth/script.projects",
+      "https://www.googleapis.com/auth/script.deployments",
+      "https://www.googleapis.com/auth/userinfo.email"
+    ].join(" ");
+
+    let tokenClient = null;
+    let accessToken = "";
+
+    const btn = document.getElementById("btnInstalar");
+    const statusBox = document.getElementById("status");
+    const resultado = document.getElementById("resultado");
+
+    function status(msg, erro=false){
+      statusBox.style.display = "block";
+      statusBox.className = erro ? "erro" : "";
+      statusBox.textContent = msg;
+    }
+
+    async function api(url, options={}){
+      const headers = Object.assign(
+        {
+          "Authorization": "Bearer " + accessToken,
+          "Content-Type": "application/json"
+        },
+        options.headers || {}
+      );
+
+      const resp = await fetch(url, Object.assign({}, options, {headers}));
+      const text = await resp.text();
+      let data = null;
+
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (_) {
+        data = {raw:text};
+      }
+
+      if(!resp.ok){
+        const msg =
+          data &&
+          data.error &&
+          data.error.message
+            ? data.error.message
+            : ("HTTP " + resp.status);
+
+        const err = new Error(msg);
+        err.status = resp.status;
+        err.payload = data;
+        throw err;
+      }
+
+      return data;
+    }
+
+    async function copiarAbasModelo(destinoId){
+      status("Preparando a planilha-base...");
+
+      const meta = await api(
+        "https://sheets.googleapis.com/v4/spreadsheets/" +
+        encodeURIComponent(TEMPLATE_SPREADSHEET_ID) +
+        "?fields=sheets.properties"
+      );
+
+      const sheets = (meta.sheets || []).filter(s => {
+        const title = s.properties && s.properties.title;
+        return !!title;
+      });
+
+      for(const s of sheets){
+        await api(
+          "https://sheets.googleapis.com/v4/spreadsheets/" +
+          encodeURIComponent(TEMPLATE_SPREADSHEET_ID) +
+          "/sheets/" +
+          encodeURIComponent(s.properties.sheetId) +
+          ":copyTo",
+          {
+            method:"POST",
+            body:JSON.stringify({
+              destinationSpreadsheetId: destinoId
+            })
+          }
+        );
+      }
+
+      // Remove a aba vazia padrão criada pelo spreadsheets.create.
+      const destinoMeta = await api(
+        "https://sheets.googleapis.com/v4/spreadsheets/" +
+        encodeURIComponent(destinoId) +
+        "?fields=sheets.properties"
+      );
+
+      const padrao = (destinoMeta.sheets || []).find(
+        s => s.properties && s.properties.title === "Sheet1"
+      );
+
+      if(padrao){
+        await api(
+          "https://sheets.googleapis.com/v4/spreadsheets/" +
+          encodeURIComponent(destinoId) +
+          ":batchUpdate",
+          {
+            method:"POST",
+            body:JSON.stringify({
+              requests:[
+                {
+                  deleteSheet:{
+                    sheetId:padrao.properties.sheetId
+                  }
+                }
+              ]
+            })
+          }
+        );
+      }
+    }
+
+    async function instalar(){
+      btn.disabled = true;
+      resultado.style.display = "none";
+
+      try{
+        status("Criando a planilha-base no seu Drive...");
+
+        const planilha = await api(
+          "https://sheets.googleapis.com/v4/spreadsheets",
+          {
+            method:"POST",
+            body:JSON.stringify({
+              properties:{
+                title:"Hora-Atividade - Base Municipal"
+              }
+            })
+          }
+        );
+
+        const spreadsheetId = planilha.spreadsheetId;
+
+        await copiarAbasModelo(spreadsheetId);
+
+        status("Criando o aplicativo vinculado à planilha...");
+
+        const projeto = await api(
+          "https://script.googleapis.com/v1/projects",
+          {
+            method:"POST",
+            body:JSON.stringify({
+              title:"Hora-Atividade",
+              parentId:spreadsheetId
+            })
+          }
+        );
+
+        const scriptId = projeto.scriptId;
+
+        status("Enviando o código do Hora-Atividade...");
+
+        const templateResp = await fetch(PROJECT_TEMPLATE_URL, {cache:"no-store"});
+        if(!templateResp.ok){
+          throw new Error(
+            "Não foi possível carregar o arquivo projeto-hora-atividade.json."
+          );
+        }
+
+        const template = await templateResp.json();
+
+        await api(
+          "https://script.googleapis.com/v1/projects/" +
+          encodeURIComponent(scriptId) +
+          "/content",
+          {
+            method:"PUT",
+            body:JSON.stringify(template)
+          }
+        );
+
+        status("Criando a versão do aplicativo...");
+
+        const versao = await api(
+          "https://script.googleapis.com/v1/projects/" +
+          encodeURIComponent(scriptId) +
+          "/versions",
+          {
+            method:"POST",
+            body:JSON.stringify({
+              description:"Instalação automática Hora-Atividade"
+            })
+          }
+        );
+
+        status("Publicando o Web App...");
+
+        const implantacao = await api(
+          "https://script.googleapis.com/v1/projects/" +
+          encodeURIComponent(scriptId) +
+          "/deployments",
+          {
+            method:"POST",
+            body:JSON.stringify({
+              versionNumber:versao.versionNumber,
+              manifestFileName:"appsscript",
+              description:"Hora-Atividade Web App"
+            })
+          }
+        );
+
+        const webEntry = (implantacao.entryPoints || []).find(
+          e => e.entryPointType === "WEB_APP" && e.webApp && e.webApp.url
+        );
+
+        if(!webEntry){
+          throw new Error(
+            "A implantação foi criada, mas a URL do Web App não foi retornada."
+          );
+        }
+
+        const execUrl = webEntry.webApp.url;
+
+        const appUrl =
+          APP_WRAPPER_BASE +
+          "?exec=" +
+          encodeURIComponent(execUrl);
+
+        status("Instalação concluída.");
+
+        document.getElementById("linkPlanilha").href =
+          "https://docs.google.com/spreadsheets/d/" +
+          encodeURIComponent(spreadsheetId) +
+          "/edit";
+
+        document.getElementById("linkApp").href = appUrl;
+
+        resultado.style.display = "block";
+
+      }catch(err){
+        console.error(err);
+
+        let msg =
+          "Não foi possível concluir a instalação.\n\n" +
+          (err && err.message ? err.message : String(err));
+
+        if(
+          /Apps Script API|script projects|access.*api|permission/i.test(msg) ||
+          err.status === 403
+        ){
+          msg +=
+            "\n\nSe esta for a primeira instalação nesta conta, " +
+            "ative o acesso à API Google Apps Script nas configurações " +
+            "do Apps Script e tente novamente.";
+        }
+
+        status(msg, true);
+
+      }finally{
+        btn.disabled = false;
+      }
+    }
+
+    btn.addEventListener("click", () => {
+      if(!window.google || !google.accounts || !google.accounts.oauth2){
+        status("O serviço de login Google ainda está carregando. Tente novamente em alguns segundos.", true);
+        return;
+      }
+
+      if(CLIENT_ID.startsWith("COLOQUE_AQUI")){
+        status("O instalador ainda precisa receber o Client ID OAuth do projeto Google Cloud.", true);
+        return;
+      }
+
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: async (response) => {
+          if(response.error){
+            status("Autorização cancelada ou recusada.", true);
+            return;
+          }
+
+          accessToken = response.access_token;
+          await instalar();
+        }
+      });
+
+      tokenClient.requestAccessToken({
+        prompt:"consent"
+      });
+    });
+  </script>
+</body>
+</html>
