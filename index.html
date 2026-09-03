@@ -1,131 +1,182 @@
+hoje 16:15
+quando copio e colo lá fica simples nao fica formatado como voce me manda
+
+
+Perfeito. Agora você está exatamente na tela certa.
+
+Clique em + Criar cliente.
+
+Na tela seguinte, configure assim:
+
+Tipo de aplicativo: Aplicativo da Web
+Nome: Hora-Atividade Instalador Web
+
+Depois, em Origens JavaScript autorizadas, clique em + Adicionar URI e coloque:
+
+https://kleberbifon-beep.github.io
+
+Em URIs de redirecionamento autorizados, pode deixar vazio por enquanto.
+
+Depois clique em Criar.
+
+O Google vai gerar um ID do cliente OAuth 2.0 parecido com:
+
+123456789012-xxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
+
+Me mande esse Client ID ou um print da tela. Não precisa enviar o Client Secret.
+
+client_secret_1086594484351-fde6t21t2k3rorbbhvai83icjcsrb1rl.apps.googleusercontent.com.json
+Arquivo
+
+Perfeito. O arquivo que você enviou contém o Client ID correto e também confirma que a origem JavaScript autorizada está como https://kleberbifon-beep.github.io.
+
+Já coloquei esse Client ID no nosso instalador:
+
+Baixar instalar.html já configurado
+
+Agora há um ponto importante: o arquivo que você enviou também contém um Client Secret. Esse segredo não deve ir para o GitHub nem para o instalar.html. Como ele foi exportado e compartilhado fora do Google Cloud, eu recomendo gerar/rotacionar esse segredo depois. O instalador que estamos fazendo usa apenas o Client ID, então o secret não é necessário.
+
+O próximo passo é subir este instalar_com_client_id.html no GitHub com o nome:
+
+instalar.html
+
+substituindo qualquer instalar.html antigo.
+
+Depois também vamos subir:
+
+projeto-hora-atividade.json
+o novo index.html dinâmico
+
+Mas faça primeiro só o instalar.html. Depois me mande um print da raiz do repositório e seguimos. 
+
+instalar_com_client_id.html
+HTML
+
+Perfeito. O instalar.html já está no GitHub e pelo print o conteúdo está correto.
+
+Agora faça mais duas coisas no repositório:
+
+Adicione o arquivo:
+
+Baixar projeto-hora-atividade.json
+
+Ele deve ficar na raiz com exatamente este nome:
+
+projeto-hora-atividade.json
+Substitua o conteúdo do index.html atual pelo conteúdo deste arquivo:
+
+Baixar novo index.html dinâmico
+
+No GitHub, o arquivo continua se chamando:
+
+index.html
+
+Só muda o conteúdo dele.
+
+Tem ainda um detalhe no seu print: aparece um arquivo chamado apenas:
+
+.html
+
+Esse provavelmente deveria ser o privacidade.html. Se for, renomeie para:
+
+privacidade.html
+
+No final, a raiz deve ficar assim:
+
+app-hora-atividade.png
+index.html
+instalar.html
+manifest.json
+privacidade.html
+termos.html
+projeto-hora-atividade.json
+
+Depois me mande um print da raiz do repositório. Aí vamos testar pela primeira vez o link:
+
+https://kleberbifon-beep.github.io/hora-atividade/instalar.html
+
+e clicar em Continuar com Google.
+
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8">
-
-  <!-- AJUSTE PARA CELULAR -->
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-  >
-
-  <!-- COR DO APLICATIVO -->
-  <meta
-    name="theme-color"
-    content="#1f5f46"
-  >
-
-  <!-- CONFIGURAÇÕES PARA IPHONE / IOS -->
-  <meta
-    name="apple-mobile-web-app-capable"
-    content="yes"
-  >
-
-  <meta
-    name="mobile-web-app-capable"
-    content="yes"
-  >
-
-  <meta
-    name="apple-mobile-web-app-status-bar-style"
-    content="default"
-  >
-
-  <meta
-    name="apple-mobile-web-app-title"
-    content="Hora-Atividade"
-  >
-
-  <!-- NOME DO APLICATIVO -->
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+  <meta name="theme-color" content="#1f5f46">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Hora-Atividade">
   <title>Hora-Atividade</title>
-
-  <!-- ÍCONE PARA IPHONE / IPAD -->
-  <link
-    rel="apple-touch-icon"
-    href="./app-hora-atividade.png"
-  >
-
-  <!-- ÍCONE NORMAL -->
-  <link
-    rel="icon"
-    type="image/png"
-    href="./app-hora-atividade.png"
-  >
-
-  <!-- MANIFESTO DO APLICATIVO -->
-  <link
-    rel="manifest"
-    href="./manifest.json"
-  >
+  <link rel="apple-touch-icon" href="./app-hora-atividade.png">
+  <link rel="icon" type="image/png" href="./app-hora-atividade.png">
+  <link rel="manifest" href="./manifest.json">
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background: #f4f6f8;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      min-height: 100vh;
-      min-height: 100dvh;
-      background: #f4f6f8;
-      overflow: hidden;
-    }
-
-    #app {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-
-      width: 100%;
-      height: 100%;
-
-      background: #f4f6f8;
-    }
-
-    iframe {
-      position: absolute;
-      top: 0;
-      left: 0;
-
-      border: 0;
-
-      width: 100%;
-      height: 100%;
-
-      display: block;
-
-      background: #f4f6f8;
+    *{box-sizing:border-box}
+    html,body,#app{margin:0;width:100%;height:100%;background:#f4f6f8}
+    body{overflow:hidden}
+    #app{position:fixed;inset:0}
+    iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#f4f6f8;display:block}
+    #erro{
+      display:none;
+      min-height:100%;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      font-family:Arial,Helvetica,sans-serif;
+      color:#455a64;
+      text-align:center;
     }
   </style>
-
 </head>
-
 <body>
-
   <div id="app">
-
-    <iframe
-      src="https://script.google.com/macros/s/AKfycbzf04S1hvAEuMJJ3l6X3D-hkPEv1Aycq8ZvVnh5XSkTHCRXPwVGJl8X3cAb4gTg7z-e/exec"
-      allow="clipboard-write"
-      title="Hora-Atividade"
-    ></iframe>
-
+    <iframe id="frameApp" allow="clipboard-write" title="Hora-Atividade"></iframe>
+    <div id="erro">
+      <div>
+        <h2>Hora-Atividade</h2>
+        <p>Esta instalação ainda não foi vinculada a um Web App.</p>
+      </div>
+    </div>
   </div>
 
-</body>
+  <script>
+    (function(){
+      const params = new URLSearchParams(location.search);
+      const exec = params.get("exec");
 
+      if(exec){
+        try{
+          const u = new URL(exec);
+          if(
+            u.protocol === "https:" &&
+            u.hostname === "script.google.com"
+          ){
+            localStorage.setItem("hora_atividade_exec", exec);
+          }
+        }catch(_){}
+      }
+
+      const alvo =
+        exec ||
+        localStorage.getItem("hora_atividade_exec") ||
+        "";
+
+      const frame = document.getElementById("frameApp");
+      const erro = document.getElementById("erro");
+
+      if(alvo){
+        frame.src = alvo;
+      }else{
+        frame.style.display = "none";
+        erro.style.display = "flex";
+      }
+    })();
+  </script>
+</body>
 </html>
+projeto-hora-atividade.json
+Código
+index_github_dinamico.html
+HTML
