@@ -499,6 +499,21 @@
 
         const template = await templateResp.json();
 
+        // Injeta o ID da planilha-base recém-criada no Code.gs.
+        // Assim o Web App consegue localizar sua base mesmo sem
+        // SpreadsheetApp.getActiveSpreadsheet().
+        (template.files || []).forEach(arquivo => {
+          if(
+            arquivo.name === "Code" &&
+            typeof arquivo.source === "string"
+          ){
+            arquivo.source = arquivo.source.replace(
+              /__PLANILHA_BASE_ID__/g,
+              spreadsheetId
+            );
+          }
+        });
+
         await api(
           "https://script.googleapis.com/v1/projects/" +
           encodeURIComponent(scriptId) +
@@ -563,7 +578,34 @@
           encodeURIComponent(spreadsheetId) +
           "/edit";
 
-        document.getElementById("linkApp").href = appUrl;
+        document.getElementById("linkApp").href = execUrl;
+        document.getElementById("linkApp").textContent =
+          "1. Autorizar Hora-Atividade";
+
+        const aviso = document.createElement("div");
+        aviso.style.marginTop = "14px";
+        aviso.style.padding = "14px";
+        aviso.style.borderRadius = "10px";
+        aviso.style.background = "#fff8e1";
+        aviso.style.color = "#6d5700";
+        aviso.style.lineHeight = "1.5";
+        aviso.innerHTML =
+          "<strong>Última autorização do Google:</strong><br>" +
+          "Clique primeiro em <b>Autorizar Hora-Atividade</b>, " +
+          "revise as permissões e clique em Permitir. " +
+          "Depois volte a esta página e use o botão abaixo.";
+
+        resultado.appendChild(aviso);
+
+        const abrirFinal = document.createElement("a");
+        abrirFinal.className = "botao principal";
+        abrirFinal.style.marginTop = "12px";
+        abrirFinal.target = "_blank";
+        abrirFinal.rel = "noopener";
+        abrirFinal.href = appUrl;
+        abrirFinal.textContent = "2. Abrir aplicativo instalado";
+
+        resultado.appendChild(abrirFinal);
 
         resultado.style.display = "block";
 
