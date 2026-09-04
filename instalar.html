@@ -228,7 +228,7 @@
       });
 
       for(const s of sheets){
-        await api(
+        const copiada = await api(
           "https://sheets.googleapis.com/v4/spreadsheets/" +
           encodeURIComponent(TEMPLATE_SPREADSHEET_ID) +
           "/sheets/" +
@@ -241,6 +241,37 @@
             })
           }
         );
+
+        // A API pode criar a aba com nome como "Copy of USUÁRIOS".
+        // Renomeamos imediatamente para o nome original, pois o app
+        // procura nomes exatos como USUÁRIOS, PROFESSORES, CONFIG e LOGS.
+        if(
+          copiada &&
+          typeof copiada.sheetId !== "undefined" &&
+          copiada.title !== s.properties.title
+        ){
+          await api(
+            "https://sheets.googleapis.com/v4/spreadsheets/" +
+            encodeURIComponent(destinoId) +
+            ":batchUpdate",
+            {
+              method:"POST",
+              body:JSON.stringify({
+                requests:[
+                  {
+                    updateSheetProperties:{
+                      properties:{
+                        sheetId:copiada.sheetId,
+                        title:s.properties.title
+                      },
+                      fields:"title"
+                    }
+                  }
+                ]
+              })
+            }
+          );
+        }
       }
 
       // Remove a aba vazia padrão criada pelo spreadsheets.create.
@@ -271,6 +302,36 @@
               ]
             })
           }
+        );
+      }
+
+      // Confere a estrutura mínima antes de criar/publicar o aplicativo.
+      const conferir = await api(
+        "https://sheets.googleapis.com/v4/spreadsheets/" +
+        encodeURIComponent(destinoId) +
+        "?fields=sheets.properties"
+      );
+
+      const nomes = (conferir.sheets || []).map(
+        s => s.properties && s.properties.title
+      );
+
+      const obrigatorias = [
+        "USUÁRIOS",
+        "PROFESSORES",
+        "CONFIG",
+        "LOGS"
+      ];
+
+      const faltantes = obrigatorias.filter(
+        nome => !nomes.includes(nome)
+      );
+
+      if(faltantes.length){
+        throw new Error(
+          "A planilha-base foi criada, mas faltaram as abas obrigatórias: " +
+          faltantes.join(", ") +
+          "."
         );
       }
     }
