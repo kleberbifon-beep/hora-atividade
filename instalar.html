@@ -213,6 +213,118 @@
       return data;
     }
 
+    async function sha256Hex(texto){
+      const bytes = new TextEncoder().encode(String(texto));
+      const hash = await crypto.subtle.digest("SHA-256", bytes);
+
+      return Array.from(new Uint8Array(hash))
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
+    }
+
+    async function prepararBaseLimpa(destinoId){
+      status("Preparando usuário administrador inicial...");
+
+      const meta = await api(
+        "https://sheets.googleapis.com/v4/spreadsheets/" +
+        encodeURIComponent(destinoId) +
+        "?fields=sheets.properties"
+      );
+
+      const props = (meta.sheets || [])
+        .map(s => s.properties || {});
+
+      const nomes = props
+        .map(p => p.title)
+        .filter(Boolean);
+
+      const obrigatorias = [
+        "USUÁRIOS",
+        "PROFESSORES",
+        "CONFIG",
+        "LOGS"
+      ];
+
+      const faltantes = obrigatorias.filter(
+        nome => !nomes.includes(nome)
+      );
+
+      if(faltantes.length){
+        throw new Error(
+          "A planilha-base foi criada, mas faltaram as abas obrigatórias: " +
+          faltantes.join(", ")
+        );
+      }
+
+      // Limpa somente dados, preservando cabeçalhos/formatação.
+      const limpar = [];
+
+      const adicionarFaixa = (nome, colFinal) => {
+        const p = props.find(x => x.title === nome);
+        if(!p) return;
+
+        const linhas =
+          p.gridProperties && p.gridProperties.rowCount
+            ? p.gridProperties.rowCount
+            : 1000;
+
+        if(linhas >= 2){
+          limpar.push(
+            "'" + nome.replace(/'/g, "''") + "'!A2:" +
+            colFinal + linhas
+          );
+        }
+      };
+
+      adicionarFaixa("USUÁRIOS", "J");
+      adicionarFaixa("PROFESSORES", "E");
+      adicionarFaixa("LOGS", "Z");
+      adicionarFaixa("HISTÓRICO_PLANILHAS", "Z");
+
+      if(limpar.length){
+        await api(
+          "https://sheets.googleapis.com/v4/spreadsheets/" +
+          encodeURIComponent(destinoId) +
+          "/values:batchClear",
+          {
+            method:"POST",
+            body:JSON.stringify({
+              ranges: limpar
+            })
+          }
+        );
+      }
+
+      const hash = await sha256Hex("123456");
+
+      await api(
+        "https://sheets.googleapis.com/v4/spreadsheets/" +
+        encodeURIComponent(destinoId) +
+        "/values/" +
+        encodeURIComponent("USUÁRIOS!A2:J2") +
+        "?valueInputOption=RAW",
+        {
+          method:"PUT",
+          body:JSON.stringify({
+            range:"USUÁRIOS!A2:J2",
+            majorDimension:"ROWS",
+            values:[[
+              1,
+              "Administrador",
+              "admin",
+              hash,
+              "ADMIN",
+              "",
+              "SIM",
+              "",
+              "SIM",
+              ""
+            ]]
+          })
+        }
+      );
+    }
+
     async function copiarAbasModelo(destinoId){
       status("Preparando a planilha-base...");
 
@@ -358,6 +470,8 @@
         const spreadsheetId = planilha.spreadsheetId;
 
         await copiarAbasModelo(spreadsheetId);
+
+        await prepararBaseLimpa(spreadsheetId);
 
         status("Criando o aplicativo vinculado à planilha...");
 
