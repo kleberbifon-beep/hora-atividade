@@ -13,7 +13,7 @@
     {
       "name": "appsscript",
       "type": "JSON",
-      "source": "{\n  \"timeZone\": \"America/Sao_Paulo\",\n  \"dependencies\": {},\n  \"exceptionLogging\": \"STACKDRIVER\",\n  \"runtimeVersion\": \"V8\",\n  \"webapp\": {\n    \"access\": \"ANYONE_ANONYMOUS\",\n    \"executeAs\": \"USER_DEPLOYING\"\n  },\n  \"oauthScopes\": [\n    \"https://www.googleapis.com/auth/spreadsheets\",\n    \"https://www.googleapis.com/auth/drive\",\n    \"https://www.googleapis.com/auth/script.external_request\",\n    \"https://www.googleapis.com/auth/script.send_mail\"\n  ]\n}"
+      "source": "{\n  \"timeZone\": \"America/Sao_Paulo\",\n  \"dependencies\": {},\n  \"exceptionLogging\": \"STACKDRIVER\",\n  \"runtimeVersion\": \"V8\",\n  \"webapp\": {\n    \"access\": \"ANYONE_ANONYMOUS\",\n    \"executeAs\": \"USER_DEPLOYING\"\n  },\n  \"oauthScopes\": [\n    \"https://www.googleapis.com/auth/spreadsheets\",\n    \"https://www.googleapis.com/auth/drive\",\n    \"https://www.googleapis.com/auth/script.external_request\",\n    \"https://www.googleapis.com/auth/script.send_mail\",\n    \"https://www.googleapis.com/auth/script.scriptapp\"\n  ]\n}"
     }
   ]
 }
